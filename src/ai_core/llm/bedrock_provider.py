@@ -47,19 +47,6 @@ class BedrockProvider(BaseLLMProvider):
         Raises:
             NotImplementedError: This provider is not yet implemented
         """
-        # TODO: Implement when needed
-        # from langchain_aws import ChatBedrock
-        # 
-        # return ChatBedrock(
-        #     model_id=self.model,
-        #     model_kwargs={
-        #         "temperature": self.temperature,
-        #         "max_tokens": self.max_tokens,
-        #         **self.kwargs
-        #     },
-        #     region_name=self.region_name
-        # )
-        
         raise NotImplementedError(
             "BedrockProvider is not yet implemented. "
             "Install langchain-aws and boto3 to use this provider."

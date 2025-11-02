@@ -9,17 +9,17 @@ All models inherit from BaseModel which provides:
 
 from .base import Base, BaseModel
 from .user import User
-from .conversation import Conversation
+from .session import Session
 from .message import Message
 from .document import Document
-from .conversation_document import ConversationDocument
+from .session_document import SessionDocument
 
 __all__ = [
     "Base",
     "BaseModel",
     "User",
-    "Conversation",
+    "Session",
     "Message",
     "Document",
-    "ConversationDocument",
+    "SessionDocument",
 ]

@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
 
-from .api.routes import chatbot, user, conversation, message, document
+from .api.routes import chatbot, user, session, message, document, debug
 from .config.settings import settings
 from .constants.config import Config
 from .middleware.middleware import LoggingMiddleware
@@ -75,9 +75,10 @@ setup_exception_handlers(app)
 
 app.include_router(chatbot.router, prefix=Config.API_V1_PREFIX)
 app.include_router(user.router, prefix=Config.API_V1_PREFIX)
-app.include_router(conversation.router, prefix=Config.API_V1_PREFIX)
+app.include_router(session.router, prefix=Config.API_V1_PREFIX)
 app.include_router(message.router, prefix=Config.API_V1_PREFIX)
 app.include_router(document.router, prefix=Config.API_V1_PREFIX)
+app.include_router(debug.router, prefix=Config.API_V1_PREFIX)
 
 
 @app.get("/")

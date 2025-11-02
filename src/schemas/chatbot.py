@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Literal
 from ..constants.enums import MessageRole
 
 
@@ -8,10 +8,17 @@ class ChatMessage(BaseModel):
     content: str
 
 
+class StreamChunk(BaseModel):
+    """Streaming response chunk with type."""
+    type: Literal["chunk", "error", "done"]
+    content: str
+    metadata: Optional[Dict[str, Any]] = None
+
+
 class ChatRequest(BaseModel):
     """Request for smart chat with agent routing."""
     query: str
-    conversation_id: Optional[int] = None
+    session_id: Optional[str] = None
     history: Optional[List[Dict[str, str]]] = None
     system_prompt: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
@@ -23,7 +30,7 @@ class ChatResponse(BaseModel):
     response: str
     agent_type: Optional[str] = None
     confidence: Optional[float] = None
-    conversation_id: Optional[int] = None
+    session_id: Optional[str] = None
     error: Optional[str] = None
 
 
@@ -43,6 +50,6 @@ class ChatCompletionResponse(BaseModel):
 
 
 class DeleteMessagesRequest(BaseModel):
-    conversation_id: int
+    session_id: str
     message_ids: Optional[List[int]] = None
 

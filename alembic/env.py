@@ -9,10 +9,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from src.models.base import Base
 from src.models.user import User
-from src.models.conversation import Conversation
 from src.models.message import Message
 from src.models.document import Document
-from src.models.conversation_document import ConversationDocument
 from src.config.settings import settings
 
 config = context.config

@@ -1,12 +1,13 @@
 """API routes."""
 
-from . import chatbot, conversation, document, message, user
+from . import chatbot, session, document, message, user, debug
 
 __all__ = [
     "chatbot",
-    "conversation",
+    "session",
     "document",
     "message",
     "user",
+    "debug",
 ]
 

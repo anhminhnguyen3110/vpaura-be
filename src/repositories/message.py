@@ -15,10 +15,10 @@ class MessageRepository(BaseRepository[Message]):
         )
         return result.scalar_one_or_none()
     
-    async def get_by_conversation_id(self, conversation_id: int, skip: int = 0, limit: int = 100) -> List[Message]:
+    async def get_by_session_id(self, session_id: int, skip: int = 0, limit: int = 100) -> List[Message]:
         result = await self.session.execute(
             select(Message)
-            .where(Message.conversation_id == conversation_id)
+            .where(Message.session_id == session_id)
             .order_by(Message.created_at)
             .offset(skip)
             .limit(limit)

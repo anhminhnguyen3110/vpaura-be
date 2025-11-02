@@ -53,6 +53,8 @@ class ChatAgent(BaseAgent):
     async def execute(
         self,
         query: str,
+        session_id: Optional[str] = None,
+        user_id: Optional[int] = None,
         history: Optional[list] = None,
         system_prompt: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None
@@ -62,23 +64,50 @@ class ChatAgent(BaseAgent):
         
         Args:
             query: User query
-            history: Conversation history
+            session_id: Session ID for checkpointer (NEW)
+            user_id: User ID for tracking (NEW)
+            history: Conversation history (legacy, will be deprecated)
             system_prompt: System prompt for the LLM
             metadata: Additional metadata
             
         Returns:
             Agent response
         """
-        truncated_history = self.truncate_history(history or [])
+        # Build messages from history + current query
+        messages = []
         
+        # Add system prompt if provided
+        if system_prompt:
+            messages.append(SystemMessage(content=system_prompt))
+        
+        # Convert history to messages
+        if history:
+            for msg in history:
+                if msg.get("role") == "user":
+                    messages.append(HumanMessage(content=msg["content"]))
+                elif msg.get("role") == "assistant":
+                    messages.append(AIMessage(content=msg["content"]))
+        
+        # Add current query
+        messages.append(HumanMessage(content=query))
+        
+        # Build state with new messages field
         state: ChatAgentState = {
-            "query": query,
-            "history": truncated_history,
+            "messages": messages,
+            "session_id": session_id,
             "system_prompt": system_prompt,
             "metadata": metadata or {},
         }
         
-        return await self._execute_internal(state)
+        # Build config for graph execution
+        config = self._build_graph_config(
+            session_id=session_id,
+            user_id=user_id,
+            metadata=metadata
+        )
+        
+        # Execute with config
+        return await self._execute_internal(state, config)
     
     def _build_graph(self) -> StateGraph:
         """
@@ -106,61 +135,34 @@ class ChatAgent(BaseAgent):
             state: Current chat state
             
         Returns:
-            Updated state
+            Updated state with AI message added
         """
         self.logger.info("Executing chat node")
         
         try:
-            messages = self._build_messages(state)
+            # Messages already in state with add_messages reducer
+            # No need to rebuild - just use directly
+            messages = state.get("messages", [])
+            
+            if not messages:
+                raise ValueError("No messages in state")
             
             response = await self.llm.ainvoke(messages)
             
+            # Return AI message - add_messages will auto-merge it
             return {
-                "response": response.content if hasattr(response, 'content') else str(response),
+                "messages": [response],
                 "error": None
             }
             
         except Exception as e:
             self.logger.error(f"Chat node error: {str(e)}", exc_info=True)
+            
+            # Return error message as AI response
+            error_msg = AIMessage(
+                content="I apologize, but I encountered an error. Please try again."
+            )
             return {
-                "response": "I apologize, but I encountered an error. Please try again.",
+                "messages": [error_msg],
                 "error": str(e)
             }
-    
-    def _build_messages(self, state: ChatAgentState) -> list:
-        """
-        Build message list for LLM.
-        
-        Args:
-            state: Current chat state
-            
-        Returns:
-            List of LangChain message objects
-        """
-        messages = []
-        
-        query_val = state.get("query")
-        if isinstance(query_val, dict):
-            actual_query = query_val.get("query")
-            history = query_val.get("history", [])
-            system_prompt = query_val.get("system_prompt")
-        else:
-            actual_query = query_val
-            history = state.get("history", [])
-            system_prompt = state.get("system_prompt")
-        
-        if system_prompt:
-            messages.append(SystemMessage(content=system_prompt))
-        
-        if history:
-            for msg in history:
-                if msg.get("role") == "user":
-                    messages.append(HumanMessage(content=msg["content"]))
-                elif msg.get("role") == "assistant":
-                    messages.append(AIMessage(content=msg["content"]))
-        
-        # Current user query
-        if actual_query:
-            messages.append(HumanMessage(content=actual_query))
-        
-        return messages

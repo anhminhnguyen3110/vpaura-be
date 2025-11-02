@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 from enum import Enum
 from pathlib import Path
+from typing import List
 
 
 class Environment(str, Enum):
@@ -29,6 +30,33 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "openai/gpt-4o-mini-2024-07-18"
     LLM_TEMPERATURE: float = 0.7
     LLM_MAX_TOKENS: int = 2000
+    LLM_FALLBACK_MODEL: str = "openai/gpt-3.5-turbo"
+    
+    # Checkpointer Configuration
+    ENABLE_CHECKPOINTER: bool = True
+    CHECKPOINT_TABLES: List[str] = ["checkpoints", "checkpoint_writes", "checkpoint_blobs"]
+    CHECKPOINT_RETENTION_DAYS: int = 30
+    
+    # Environment-aware properties
+    @property
+    def MAX_LLM_CALL_RETRIES(self) -> int:
+        """Environment-specific retry count."""
+        return {
+            Environment.DEVELOPMENT: 1,
+            Environment.TEST: 1,
+            Environment.STAGING: 2,
+            Environment.PRODUCTION: 3,
+        }.get(self.ENVIRONMENT, 2)
+    
+    @property
+    def POSTGRES_POOL_SIZE(self) -> int:
+        """Environment-specific pool size."""
+        return {
+            Environment.DEVELOPMENT: 5,
+            Environment.TEST: 3,
+            Environment.STAGING: 10,
+            Environment.PRODUCTION: 20,
+        }.get(self.ENVIRONMENT, 10)
     
     API_PREFIX: str = "/api/v1"
     ALLOWED_ORIGINS: str = "*"

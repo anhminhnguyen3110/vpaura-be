@@ -3,10 +3,12 @@
 This module defines the common state structure shared across all agents.
 """
 
-from typing import TypedDict, List, Dict, Optional, Any
+from typing import TypedDict, List, Dict, Optional, Any, Annotated
+from langgraph.graph.message import add_messages
+from langchain_core.messages import BaseMessage
 
 
-class BaseAgentState(TypedDict, total=False):
+class BaseAgentState(TypedDict):
     """
     Base state for all agent workflows.
     
@@ -14,15 +16,19 @@ class BaseAgentState(TypedDict, total=False):
     Specific agents can extend this with their own fields.
     
     Attributes:
-        query: User input query
-        history: Conversation history as list of message dicts
-        response: Final agent response to return to user
-        error: Error message if any occurred during execution
+        messages: Conversation messages with automatic deduplication via add_messages reducer
+        session_id: Session/thread ID for checkpointer
         metadata: Additional metadata for the execution
+        error: Error message if any occurred during execution
     """
     
-    query: str
-    history: List[Dict[str, str]]
-    response: str
-    error: Optional[str]
+    # ✨ NEW: Use add_messages reducer for automatic message management
+    # This prevents message duplication and handles tool messages properly
+    messages: Annotated[list[BaseMessage], add_messages]
+    
+    # Session tracking for checkpointer
+    session_id: Optional[str]
+    
+    # Metadata and error tracking
     metadata: Optional[Dict[str, Any]]
+    error: Optional[str]

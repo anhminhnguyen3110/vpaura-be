@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from .base import BaseModel
 
 if TYPE_CHECKING:
-    from .conversation import Conversation
+    from .session import Session
     from .document import Document
 
 
@@ -15,8 +15,8 @@ class User(BaseModel):
     email = Column(String(255), unique=True, index=True, nullable=False)
     fullname = Column(String(255), nullable=False)
     
-    conversations = relationship(
-        "Conversation",
+    sessions = relationship(
+        "Session",
         back_populates="user",
         cascade="all, delete-orphan"
     )

@@ -131,8 +131,11 @@ class Neo4jAgent(BaseAgent):
         self.logger.info("Analyzing query with schema")
         
         try:
+            # Extract query from last message
+            query = state["messages"][-1].content if state.get("messages") else ""
             schema = state.get("schema", {})
-            prompt = get_neo4j_analysis_prompt(state['query'], schema)
+            
+            prompt = get_neo4j_analysis_prompt(query, schema)
             analysis = await self.think_tool.execute(prompt)
             
             return {"analysis": analysis}
@@ -146,11 +149,13 @@ class Neo4jAgent(BaseAgent):
         self.logger.info("Generating Cypher query")
         
         try:
+            # Extract query from last message
+            query = state["messages"][-1].content if state.get("messages") else ""
             schema = state.get("schema", {})
             attempt = state.get("attempt", 0) + 1
             validation = state.get("validation", {})
             
-            prompt = get_neo4j_generation_prompt(state['query'], {}, schema)
+            prompt = get_neo4j_generation_prompt(query, {}, schema)
             
             if attempt > 1 and validation:
                 errors = validation.get("errors", [])

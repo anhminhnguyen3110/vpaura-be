@@ -73,7 +73,9 @@ class AgentRouter:
     
     async def route(
         self, 
-        user_input: str, 
+        user_input: str,
+        session_id: Optional[str] = None,
+        user_id: Optional[int] = None,
         agent_type: Optional[AgentType] = None,
         config: Optional[Dict[str, Any]] = None,
         confidence_threshold: float = 0.6
@@ -83,6 +85,8 @@ class AgentRouter:
         
         Args:
             user_input: User's input text
+            session_id: Session ID for checkpointer (converted from int)
+            user_id: User ID for tracing
             agent_type: Optional manual agent selection (overrides auto-detection)
             config: Optional agent configuration
             confidence_threshold: Minimum confidence for auto-routing (default 0.6)
@@ -108,7 +112,15 @@ class AgentRouter:
                 logger.info(f"Auto-routed to {agent_type} (confidence: {confidence:.2f})")
         
         agent = AgentFactory.create(agent_type, config)
-        result = await agent.execute({"input": user_input})
+        
+        # ✨ Execute with session tracking
+        result = await agent.execute(
+            query=user_input,
+            session_id=session_id,
+            user_id=user_id,
+            history=config.get("history") if config else None,
+            metadata=config.get("metadata") if config else None
+        )
         
         result["_routing"] = {
             "agent_type": agent_type.value,

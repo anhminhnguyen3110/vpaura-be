@@ -1,11 +1,11 @@
 class Messages:
     USER_CREATED = "User created successfully"
-    CONVERSATION_CREATED = "Conversation created successfully"
+    SESSION_CREATED = "Session created successfully"
     MESSAGE_SENT = "Message sent successfully"
     DOCUMENT_CREATED = "Document created successfully"
     
     USER_NOT_FOUND = "User not found"
-    CONVERSATION_NOT_FOUND = "Conversation not found"
+    SESSION_NOT_FOUND = "Session not found"
     MESSAGE_NOT_FOUND = "Message not found"
     DOCUMENT_NOT_FOUND = "Document not found"
     INVALID_INPUT = "Invalid input provided"

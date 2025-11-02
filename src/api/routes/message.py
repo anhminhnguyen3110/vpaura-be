@@ -17,13 +17,13 @@ async def create_message(
     return await service.create_message(request)
 
 
-@router.get("/conversation/{conversation_id}", response_model=List[MessageResponse])
-async def get_conversation_messages(
-    conversation_id: int,
+@router.get("/session/{session_id}", response_model=List[MessageResponse])
+async def get_session_messages(
+    session_id: int,
     session: AsyncSession = Depends(get_db_session)
 ):
     service = MessageService(session)
-    return await service.get_by_conversation(conversation_id)
+    return await service.get_by_session(session_id)
 
 
 @router.delete("/{message_id}", status_code=status.HTTP_204_NO_CONTENT)

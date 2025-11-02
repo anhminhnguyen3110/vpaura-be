@@ -1,4 +1,4 @@
-"""Message service for managing conversation messages."""
+"""Message service for managing session messages."""
 
 from ..repositories.message import MessageRepository
 from ..schemas.message import MessageCreate, MessageResponse
@@ -21,16 +21,16 @@ class MessageService:
         message = Message(
             content=message_data.content,
             role=message_data.role,
-            conversation_id=message_data.conversation_id,
+            session_id=message_data.session_id,
             extra_data=message_data.extra_data
         )
         
         created = await self.repository.create(message)
         return MessageResponse.model_validate(created)
     
-    async def get_by_conversation(self, conversation_id: int, limit: int = 20) -> List[MessageResponse]:
-        """Get messages for a conversation."""
-        messages = await self.repository.get_by_conversation_id(conversation_id, limit=limit)
+    async def get_by_session(self, session_id: int, limit: int = 20) -> List[MessageResponse]:
+        """Get messages for a session."""
+        messages = await self.repository.get_by_session_id(session_id, limit=limit)
         return [MessageResponse.model_validate(m) for m in messages]
     
     async def delete_message(self, message_id: int) -> bool:

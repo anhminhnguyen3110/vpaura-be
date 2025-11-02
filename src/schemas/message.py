@@ -10,7 +10,7 @@ class MessageBase(BaseSchema):
 
 
 class MessageCreate(MessageBase):
-    conversation_id: int
+    session_id: int
     extra_data: Optional[Dict[str, Any]] = None
 
 
@@ -20,5 +20,5 @@ class MessageUpdate(BaseSchema):
 
 
 class MessageResponse(MessageBase, TimestampSchema):
-    conversation_id: int
+    session_id: int
     extra_data: Optional[Dict[str, Any]] = None

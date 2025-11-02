@@ -97,7 +97,10 @@ class RAGAgent(BaseAgent):
         self.logger.info("Executing think node")
         
         try:
-            prompt = get_rag_thinking_prompt(state['query'])
+            # Extract query from last message
+            query = state["messages"][-1].content if state.get("messages") else ""
+            
+            prompt = get_rag_thinking_prompt(query)
             thinking = await self.think_tool.execute(prompt)
             
             return {"thinking": thinking}
@@ -111,8 +114,11 @@ class RAGAgent(BaseAgent):
         self.logger.info("Executing plan node")
         
         try:
+            # Extract query from last message
+            query = state["messages"][-1].content if state.get("messages") else ""
+            
             prompt = get_rag_planning_prompt(
-                state['query'],
+                query,
                 state.get('thinking', '')
             )
             plan = await self.plan_tool.execute(prompt)
@@ -128,7 +134,8 @@ class RAGAgent(BaseAgent):
         self.logger.info("Executing retrieve node")
         
         try:
-            query = state["query"]
+            # Extract query from last message
+            query = state["messages"][-1].content if state.get("messages") else ""
             
             filter_dict = state.get("metadata_filter")
             
@@ -181,7 +188,8 @@ class RAGAgent(BaseAgent):
         self.logger.info("Executing generate node")
         
         try:
-            query = state["query"]
+            # Extract query from last message
+            query = state["messages"][-1].content if state.get("messages") else ""
             reranked_docs = state.get("reranked_docs", [])
             
             context_parts = []

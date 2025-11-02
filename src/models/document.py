@@ -5,7 +5,7 @@ from .base import BaseModel
 
 if TYPE_CHECKING:
     from .user import User
-    from .conversation import Conversation
+    from .session import Session
 
 
 class Document(BaseModel):
@@ -19,9 +19,9 @@ class Document(BaseModel):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     
     user = relationship("User", back_populates="documents")
-    conversations = relationship(
-        "Conversation",
-        secondary="conversation_documents",
+    sessions = relationship(
+        "Session",
+        secondary="session_documents",
         back_populates="documents"
     )
 

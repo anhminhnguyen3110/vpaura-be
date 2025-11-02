@@ -52,11 +52,10 @@ class PgVectorStore(BaseVectorStore):
             List of added document IDs
         """
         logger.info(f"Adding {len(documents)} documents (MOCK)")
-        await asyncio.sleep(0.1)  # Simulate DB operation
+        await asyncio.sleep(0.1)
         
         added_ids = []
         for doc in documents:
-            # Generate mock embedding if not provided
             if not doc.embedding:
                 doc.embedding = self._generate_mock_embedding()
             
@@ -113,21 +112,17 @@ class PgVectorStore(BaseVectorStore):
             List of (document, score) tuples
         """
         logger.info(f"Searching for similar documents (MOCK): '{query[:50]}...'")
-        await asyncio.sleep(0.15)  # Simulate search operation
+        await asyncio.sleep(0.15)
         
-        # Generate query embedding
         query_embedding = self._generate_mock_embedding(seed=hash(query))
         
-        # Filter documents by metadata
         filtered_docs = self._apply_filters(filter_dict)
         
-        # Calculate similarities
         results = []
         for doc in filtered_docs:
             similarity = self._cosine_similarity(query_embedding, doc.embedding)
             results.append((doc, similarity))
         
-        # Sort by similarity (descending) and take top k
         results.sort(key=lambda x: x[1], reverse=True)
         results = results[:k]
         
@@ -206,24 +201,14 @@ class PgVectorStore(BaseVectorStore):
         if seed is not None:
             random.seed(seed)
         
-        # Generate random vector and normalize
         vector = [random.gauss(0, 1) for _ in range(self._dimension)]
         norm = math.sqrt(sum(x ** 2 for x in vector))
         return [x / norm for x in vector]
     
     def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
-        """
-        Calculate cosine similarity between two vectors.
-        
-        Args:
-            vec1: First vector
-            vec2: Second vector
-            
-        Returns:
-            Cosine similarity score (0-1)
-        """
+        """Calculate cosine similarity between two vectors."""
         dot_product = sum(a * b for a, b in zip(vec1, vec2))
-        return max(0.0, min(1.0, dot_product))  # Clamp to [0, 1]
+        return max(0.0, min(1.0, dot_product))
     
     def get_stats(self) -> Dict[str, Any]:
         """

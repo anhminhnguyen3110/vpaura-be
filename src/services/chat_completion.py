@@ -20,6 +20,7 @@ class ChatCompletionService:
             temperature=settings.LLM_TEMPERATURE,
             max_tokens=settings.LLM_MAX_TOKENS,
             api_key=settings.OPENAI_API_KEY,
+            base_url=settings.OPENAI_API_BASE,
             enable_guardrail=settings.ENABLE_GUARDRAIL
         )
     
@@ -33,6 +34,7 @@ class ChatCompletionService:
                 temperature=request.temperature or settings.LLM_TEMPERATURE,
                 max_tokens=request.max_tokens or settings.LLM_MAX_TOKENS,
                 api_key=settings.OPENAI_API_KEY,
+                base_url=settings.OPENAI_API_BASE,
                 enable_guardrail=request.use_guardrail if request.use_guardrail is not None else settings.ENABLE_GUARDRAIL
             )
             

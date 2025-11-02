@@ -2,12 +2,12 @@
 
 from typing import Dict, Any, Optional
 from langgraph.graph import StateGraph, END
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
-from ..agents.base import BaseAgent
-from ..llm.llm_factory import LLMFactory, LLMProviderType
-from .state.chat_state import ChatState
-from ...config.settings import settings
+from ..base import BaseAgent
+from ...llm.llm_factory import LLMFactory, LLMProviderType
+from .state import ChatAgentState
+from ....config.settings import settings
 
 
 class ChatAgent(BaseAgent):
@@ -50,6 +50,36 @@ class ChatAgent(BaseAgent):
         
         super().__init__(agent_type="chat", config=config)
     
+    async def execute(
+        self,
+        query: str,
+        history: Optional[list] = None,
+        system_prompt: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Execute chat agent with system prompt support.
+        
+        Args:
+            query: User query
+            history: Conversation history
+            system_prompt: System prompt for the LLM
+            metadata: Additional metadata
+            
+        Returns:
+            Agent response
+        """
+        truncated_history = self.truncate_history(history or [])
+        
+        state: ChatAgentState = {
+            "query": query,
+            "history": truncated_history,
+            "system_prompt": system_prompt,
+            "metadata": metadata or {},
+        }
+        
+        return await self._execute_internal(state)
+    
     def _build_graph(self) -> StateGraph:
         """
         Build simple chat graph.
@@ -59,18 +89,16 @@ class ChatAgent(BaseAgent):
         Returns:
             Compiled StateGraph
         """
-        workflow = StateGraph(ChatState)
+        workflow = StateGraph(ChatAgentState)
         
-        # Single node for chat
         workflow.add_node("chat", self._chat_node)
         
-        # Direct path to end
         workflow.set_entry_point("chat")
         workflow.add_edge("chat", END)
         
         return workflow.compile()
     
-    async def _chat_node(self, state: ChatState) -> Dict[str, Any]:
+    async def _chat_node(self, state: ChatAgentState) -> Dict[str, Any]:
         """
         Chat node - generate response.
         
@@ -83,10 +111,8 @@ class ChatAgent(BaseAgent):
         self.logger.info("Executing chat node")
         
         try:
-            # Build conversation context
             messages = self._build_messages(state)
             
-            # Generate response with guardrails (via base LLM provider)
             response = await self.llm.ainvoke(messages)
             
             return {
@@ -101,7 +127,7 @@ class ChatAgent(BaseAgent):
                 "error": str(e)
             }
     
-    def _build_messages(self, state: ChatState) -> list:
+    def _build_messages(self, state: ChatAgentState) -> list:
         """
         Build message list for LLM.
         
@@ -113,30 +139,24 @@ class ChatAgent(BaseAgent):
         """
         messages = []
         
-        # Handle LangGraph wrapped state (nested query)
         query_val = state.get("query")
         if isinstance(query_val, dict):
-            # Nested state from LangGraph
             actual_query = query_val.get("query")
             history = query_val.get("history", [])
             system_prompt = query_val.get("system_prompt")
         else:
-            # Direct state
             actual_query = query_val
             history = state.get("history", [])
             system_prompt = state.get("system_prompt")
         
-        # System message
         if system_prompt:
             messages.append(SystemMessage(content=system_prompt))
         
-        # Conversation history as dicts
         if history:
             for msg in history:
                 if msg.get("role") == "user":
                     messages.append(HumanMessage(content=msg["content"]))
                 elif msg.get("role") == "assistant":
-                    from langchain_core.messages import AIMessage
                     messages.append(AIMessage(content=msg["content"]))
         
         # Current user query

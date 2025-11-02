@@ -17,7 +17,6 @@ class LLMProviderType(str, Enum):
 class LLMFactory:
     """Factory class for creating LLM provider instances."""
     
-    # Registry of available providers
     _providers: Dict[LLMProviderType, Type[BaseLLMProvider]] = {
         LLMProviderType.OPENAI: OpenAIProvider,
         LLMProviderType.BEDROCK: BedrockProvider,
@@ -48,20 +47,6 @@ class LLMFactory:
         Raises:
             ValueError: If provider_type is not supported
             
-        Examples:
-            >>> # Create OpenAI provider
-            >>> llm = LLMFactory.create(
-            ...     provider_type=LLMProviderType.OPENAI,
-            ...     model="gpt-4",
-            ...     api_key="sk-..."
-            ... )
-            
-            >>> # Create Bedrock provider (when implemented)
-            >>> llm = LLMFactory.create(
-            ...     provider_type=LLMProviderType.BEDROCK,
-            ...     model="anthropic.claude-v2",
-            ...     region_name="us-east-1"
-            ... )
         """
         if provider_type not in cls._providers:
             raise ValueError(
@@ -71,7 +56,6 @@ class LLMFactory:
         
         provider_class = cls._providers[provider_type]
         
-        # Build kwargs for provider initialization
         init_kwargs = {}
         if model is not None:
             init_kwargs["model"] = model
@@ -80,7 +64,6 @@ class LLMFactory:
         if max_tokens is not None:
             init_kwargs["max_tokens"] = max_tokens
         
-        # Add any additional kwargs
         init_kwargs.update(kwargs)
         
         return provider_class(**init_kwargs)

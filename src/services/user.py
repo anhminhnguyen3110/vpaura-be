@@ -22,7 +22,8 @@ class UserService:
         """Create a new user."""
         user = User(
             email=user_data.email,
-            username=user_data.username
+            username=user_data.username,
+            fullname=user_data.fullname
         )
         
         created = await self.repository.create(user)

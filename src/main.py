@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import Dict, Any
 from datetime import datetime
+import os
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -9,6 +10,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from .api.routes import chatbot, user, conversation, message, document
 from .config.settings import settings
+from .constants.config import Config
 from .middleware.middleware import LoggingMiddleware
 from .middleware.metrics import MetricsMiddleware, get_metrics
 from .exceptions.handlers import setup_exception_handlers
@@ -17,8 +19,12 @@ from .database.connection import check_connection
 from .constants.messages import Messages
 from .core.logger import logger
 
-# Constants
-API_V1_PREFIX = "/api/v1"
+# Set Langfuse environment variables if enabled
+if settings.LANGFUSE_ENABLED:
+    os.environ["LANGFUSE_PUBLIC_KEY"] = settings.LANGFUSE_PUBLIC_KEY
+    os.environ["LANGFUSE_SECRET_KEY"] = settings.LANGFUSE_SECRET_KEY
+    os.environ["LANGFUSE_HOST"] = settings.LANGFUSE_HOST
+    logger.info("Langfuse environment variables configured")
 
 
 @asynccontextmanager
@@ -31,14 +37,12 @@ async def lifespan(app: FastAPI):
         environment=settings.ENVIRONMENT.value,
     )
     
-    # Check database connection on startup (temporarily disabled for development)
-    # if not await check_connection():
-    #     logger.error("database_connection_failed")
-    #     raise DatabaseException(Messages.DATABASE_ERROR)
+    if not await check_connection():
+        logger.error("database_connection_failed")
+        raise DatabaseException(Messages.DATABASE_ERROR)
     
     yield
     
-    # Cleanup on shutdown
     logger.info("application_shutdown")
     try:
         from .database.engine import engine
@@ -56,7 +60,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Set up CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS.split(",") if settings.ALLOWED_ORIGINS != "*" else ["*"],
@@ -65,19 +68,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add custom middlewares
 app.add_middleware(LoggingMiddleware)
 app.add_middleware(MetricsMiddleware)
 
-# Set up exception handlers
 setup_exception_handlers(app)
 
-# Include API routers
-app.include_router(chatbot.router, prefix=API_V1_PREFIX)
-app.include_router(user.router, prefix=API_V1_PREFIX)
-app.include_router(conversation.router, prefix=API_V1_PREFIX)
-app.include_router(message.router, prefix=API_V1_PREFIX)
-app.include_router(document.router, prefix=API_V1_PREFIX)
+app.include_router(chatbot.router, prefix=Config.API_V1_PREFIX)
+app.include_router(user.router, prefix=Config.API_V1_PREFIX)
+app.include_router(conversation.router, prefix=Config.API_V1_PREFIX)
+app.include_router(message.router, prefix=Config.API_V1_PREFIX)
+app.include_router(document.router, prefix=Config.API_V1_PREFIX)
 
 
 @app.get("/")

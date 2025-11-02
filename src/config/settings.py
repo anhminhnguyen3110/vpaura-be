@@ -23,10 +23,10 @@ class Settings(BaseSettings):
     DATABASE_POOL_SIZE: int = 20
     DATABASE_MAX_OVERFLOW: int = 10
     
-    OPENAI_API_BASE: str = "https://api.openai.com/v1"
+    OPENAI_API_BASE: str = "https://openrouter.ai/api/v1"
     OPENAI_API_KEY: str
-    LLM_PROVIDER: str = "openai"  # openai, bedrock
-    LLM_MODEL: str = "gpt-4"
+    LLM_PROVIDER: str = "openai"
+    LLM_MODEL: str = "openai/gpt-4o-mini-2024-07-18"
     LLM_TEMPERATURE: float = 0.7
     LLM_MAX_TOKENS: int = 2000
     
@@ -37,14 +37,22 @@ class Settings(BaseSettings):
     RATE_LIMIT_WINDOW: int = 60
     
     LOG_LEVEL: str = "INFO"
-    LOG_FORMAT: str = "console"  # console, json
+    LOG_FORMAT: str = "console"
     LOG_DIR: Path = Path("logs")
     
     REDIS_URL: str = "redis://localhost:6379"
     
     ENABLE_GUARDRAIL: bool = True
     
-    # LangFuse Configuration (disabled by default)
+    # Neo4j Configuration
+    NEO4J_URI: str = "bolt://localhost:7687"
+    NEO4J_USER: str = "neo4j"
+    NEO4J_PASSWORD: str = "neo4j"
+    NEO4J_DATABASE: str = "neo4j"
+    
+    # Neo4j Agent Configuration
+    NEO4J_AGENT_MAX_RETRIES: int = 3
+    
     LANGFUSE_ENABLED: bool = False
     LANGFUSE_PUBLIC_KEY: str = ""
     LANGFUSE_SECRET_KEY: str = ""

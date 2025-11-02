@@ -1,11 +1,4 @@
-"""Prometheus metrics configuration and middleware.
-
-This module provides comprehensive metrics tracking including:
-- HTTP request metrics (count, duration)
-- Database metrics (connections, query duration)
-- LLM metrics (requests, tokens)
-- Agent metrics (invocations, response time)
-"""
+"""Prometheus metrics configuration and middleware."""
 
 from prometheus_client import Counter, Histogram, Gauge, generate_latest
 from fastapi import Request, FastAPI
@@ -14,7 +7,6 @@ from ..config.settings import settings
 import time
 
 
-# HTTP Metrics
 http_requests_total = Counter(
     'http_requests_total',
     'Total number of HTTP requests',
@@ -27,7 +19,6 @@ http_request_duration_seconds = Histogram(
     ['method', 'endpoint']
 )
 
-# Database Metrics
 db_connections = Gauge(
     'db_connections_active',
     'Number of active database connections'
@@ -39,7 +30,6 @@ db_query_duration_seconds = Histogram(
     ['query_type']
 )
 
-# LLM Metrics
 llm_request_count = Counter(
     'llm_requests_total',
     'Total LLM requests',
@@ -66,7 +56,6 @@ llm_stream_duration_seconds = Histogram(
     buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
 )
 
-# Agent Metrics
 agent_invocations_total = Counter(
     'agent_invocations_total',
     'Total number of agent invocations',
@@ -84,21 +73,9 @@ class MetricsMiddleware:
     """Middleware for tracking HTTP request metrics."""
 
     def __init__(self, app):
-        """Initialize the middleware.
-        
-        Args:
-            app: The ASGI application
-        """
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        """Track metrics for each request.
-
-        Args:
-            scope: The ASGI scope
-            receive: The receive callable
-            send: The send callable
-        """
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
@@ -130,9 +107,5 @@ class MetricsMiddleware:
 
 
 def get_metrics():
-    """Get current Prometheus metrics.
-    
-    Returns:
-        bytes: Prometheus metrics in text format
-    """
+    """Get current Prometheus metrics."""
     return generate_latest()

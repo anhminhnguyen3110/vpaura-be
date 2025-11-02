@@ -20,7 +20,7 @@ class Document(BaseModel):
     
     user = relationship("User", back_populates="documents")
     conversations = relationship(
-        "Document",
+        "Conversation",
         secondary="conversation_documents",
         back_populates="documents"
     )

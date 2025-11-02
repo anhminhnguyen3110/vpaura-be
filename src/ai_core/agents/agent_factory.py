@@ -2,7 +2,10 @@
 
 from typing import Dict, Type, Optional, Any
 from enum import Enum
-from .base import BaseAgent
+from .base.base import BaseAgent
+from .chat_agent.agent import ChatAgent
+from .neo4j_agent.agent import Neo4jAgent
+from .rag_agent.agent import RAGAgent
 
 
 class AgentType(str, Enum):
@@ -78,19 +81,12 @@ class AgentFactory:
         return list(cls._agents.keys())
 
 
-# Register built-in agents
 def _register_builtin_agents():
     """Register default agent implementations."""
-    # Import here to avoid circular dependencies
-    from .chat_agent import ChatAgent
-    from .neo4j_agent import Neo4jAgent
-    from .rag_agent import RAGAgent
-    
     AgentFactory.register(AgentType.CHAT, ChatAgent)
     AgentFactory.register(AgentType.NEO4J, Neo4jAgent)
     AgentFactory.register(AgentType.RAG, RAGAgent)
 
 
-# Auto-register on import
 _register_builtin_agents()
 

@@ -16,7 +16,6 @@ import structlog
 
 from ..config.settings import Environment, settings
 
-# Ensure log directory exists
 settings.LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -77,7 +76,6 @@ def get_structlog_processors(include_file_info: bool = True) -> List[Any]:
     Returns:
         List[Any]: List of structlog processors
     """
-    # Set up processors that are common to both outputs
     processors = [
         structlog.stdlib.filter_by_level,
         structlog.stdlib.add_logger_name,
@@ -89,7 +87,6 @@ def get_structlog_processors(include_file_info: bool = True) -> List[Any]:
         structlog.processors.UnicodeDecoder(),
     ]
 
-    # Add callsite parameters if file info is requested
     if include_file_info:
         processors.append(
             structlog.processors.CallsiteParameterAdder(
@@ -103,7 +100,6 @@ def get_structlog_processors(include_file_info: bool = True) -> List[Any]:
             )
         )
 
-    # Add environment info
     processors.append(lambda _, __, event_dict: {**event_dict, "environment": settings.ENVIRONMENT.value})
 
     return processors
@@ -115,34 +111,26 @@ def setup_logging() -> None:
     In development: pretty console output
     In staging/production: structured JSON logs
     """
-    # Create file handler for JSON logs
     file_handler = JsonlFileHandler(get_log_file_path())
     file_handler.setLevel(settings.LOG_LEVEL)
 
-    # Create console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(settings.LOG_LEVEL)
 
-    # Get shared processors
     shared_processors = get_structlog_processors(
-        # Include detailed file info only in development and test
         include_file_info=settings.ENVIRONMENT in [Environment.DEVELOPMENT, Environment.TEST]
     )
 
-    # Configure standard logging
     logging.basicConfig(
         format="%(message)s",
         level=settings.LOG_LEVEL,
         handlers=[file_handler, console_handler],
     )
 
-    # Configure structlog based on environment
     if settings.LOG_FORMAT == "console":
-        # Development-friendly console logging
         structlog.configure(
             processors=[
                 *shared_processors,
-                # Use ConsoleRenderer for pretty output to the console
                 structlog.dev.ConsoleRenderer(),
             ],
             wrapper_class=structlog.stdlib.BoundLogger,
@@ -150,7 +138,6 @@ def setup_logging() -> None:
             cache_logger_on_first_use=True,
         )
     else:
-        # Production JSON logging
         structlog.configure(
             processors=[
                 *shared_processors,
@@ -162,10 +149,8 @@ def setup_logging() -> None:
         )
 
 
-# Initialize logging
 setup_logging()
 
-# Create logger instance
 logger = structlog.get_logger()
 logger.info(
     "logging_initialized",

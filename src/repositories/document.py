@@ -14,7 +14,7 @@ class DocumentRepository(BaseRepository[Document]):
         result = await self.session.execute(
             select(Document)
             .where(Document.id == id)
-            .options(selectinload(Document.threads))
+            .options(selectinload(Document.conversations))
         )
         return result.scalar_one_or_none()
     
@@ -30,8 +30,8 @@ class DocumentRepository(BaseRepository[Document]):
     async def get_by_thread_id(self, thread_id: int) -> List[Document]:
         result = await self.session.execute(
             select(Document)
-            .join(Document.threads)
-            .where(Document.threads.any(id=thread_id))
+            .join(Document.conversations)
+            .where(Document.conversations.any(id=thread_id))
         )
         return list(result.scalars().all())
     

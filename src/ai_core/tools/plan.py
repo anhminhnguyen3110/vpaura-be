@@ -5,6 +5,7 @@ from langchain_core.messages import HumanMessage
 
 from .base import BaseTool
 from ..llm import LLMFactory, LLMProviderType
+from ..prompts.tool_prompts import get_plan_prompt
 from ...config.settings import settings
 
 
@@ -51,30 +52,21 @@ class PlanTool(BaseTool):
                 "error": "Missing prompt parameter"
             }
         
-        # Create LLM for planning
         llm = LLMFactory.create(
             provider_type=LLMProviderType(settings.LLM_PROVIDER),
             model=settings.LLM_MODEL,
-            temperature=0.2,  # Very low temp for structured planning
+            temperature=0.2,
             max_tokens=settings.LLM_MAX_TOKENS,
             api_key=settings.OPENAI_API_KEY,
             base_url=settings.OPENAI_API_BASE,
-            enable_guardrail=False  # No guardrail for internal tools
+            enable_guardrail=False
         )
         
-        # Structured planning prompt
-        plan_prompt = f"""<plan>
-{prompt}
-
-Create a clear, numbered step-by-step plan.
-Each step should be specific and actionable.
-Format: Use numbered list (1., 2., 3., etc.)
-</plan>"""
+        plan_prompt = get_plan_prompt(prompt)
         
         response = await llm.ainvoke([HumanMessage(content=plan_prompt)])
-        plan_text = response.content
+        plan_text = response.content.strip()
         
-        # Parse numbered steps
         steps = self._parse_steps(plan_text)
         
         return {
@@ -97,9 +89,8 @@ Format: Use numbered list (1., 2., 3., etc.)
         steps = []
         for line in plan_text.split('\n'):
             line = line.strip()
-            # Match lines starting with number followed by . or )
             if line and len(line) > 2:
                 if line[0].isdigit() and line[1] in ['.', ')', ':']:
                     steps.append(line)
         
-        return steps if steps else [plan_text]  # Fallback to full text
+        return steps if steps else [plan_text]

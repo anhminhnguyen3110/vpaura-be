@@ -60,44 +60,45 @@ class ChatbotService:
         logger.info(f"Chat request from user {user_id}: {request.query[:50]}...")
         
         try:
-            # Get or create conversation
             conversation = await self._get_or_create_conversation(
                 request.conversation_id,
                 user_id,
                 request.query
             )
             
-            # Save user message
             await self._save_user_message(conversation.id, request.query)
             
-            # Build history from DB if needed
             history = await self._build_history(conversation.id, request.history)
             
-            # Route to appropriate agent with auto intent detection
+            # Route to appropriate agent with history in config
             result = await self.router.route(
-                query=request.query,
-                history=history,
-                auto_route=True,
+                user_input=request.query,
+                agent_type=None,  # Auto-detect
+                config={"history": history} if history else None,
                 confidence_threshold=confidence_threshold
             )
             
+            # Extract routing metadata
+            routing = result.get("_routing", {})
+            agent_type = routing.get("agent_type")
+            confidence = routing.get("confidence")
+            
             response_text = result.get("response", "")
             
-            # Save assistant message
             await self._save_assistant_message(
                 conversation.id,
                 response_text,
                 extra_data={
-                    "agent_type": result.get("agent_type"),
-                    "confidence": result.get("confidence")
+                    "agent_type": agent_type,
+                    "confidence": confidence
                 }
             )
             
             return ChatResponse(
                 query=request.query,
                 response=response_text,
-                agent_type=result.get("agent_type"),
-                confidence=result.get("confidence"),
+                agent_type=agent_type,
+                confidence=confidence,
                 conversation_id=conversation.id,
                 error=result.get("error")
             )
@@ -130,40 +131,40 @@ class ChatbotService:
         logger.info(f"Stream chat request from user {user_id}: {request.query[:50]}...")
         
         try:
-            # Get or create conversation
             conversation = await self._get_or_create_conversation(
                 request.conversation_id,
                 user_id,
                 request.query
             )
             
-            # Save user message
             await self._save_user_message(conversation.id, request.query)
             
-            # Build history from DB if needed
             history = await self._build_history(conversation.id, request.history)
             
-            # Route to appropriate agent with auto intent detection
+            # Route to appropriate agent with history in config
             result = await self.router.route(
-                query=request.query,
-                history=history,
-                auto_route=True,
+                user_input=request.query,
+                agent_type=None,  # Auto-detect
+                config={"history": history} if history else None,
                 confidence_threshold=confidence_threshold
             )
             
+            # Extract routing metadata
+            routing = result.get("_routing", {})
+            agent_type = routing.get("agent_type")
+            confidence = routing.get("confidence")
+            
             response_text = result.get("response", "")
             
-            # Save assistant message
             await self._save_assistant_message(
                 conversation.id,
                 response_text,
                 extra_data={
-                    "agent_type": result.get("agent_type"),
-                    "confidence": result.get("confidence")
+                    "agent_type": agent_type,
+                    "confidence": confidence
                 }
             )
             
-            # Stream response in chunks
             chunk_size = 50
             for i in range(0, len(response_text), chunk_size):
                 yield response_text[i:i + chunk_size]
@@ -173,19 +174,9 @@ class ChatbotService:
             yield f"[ERROR] {str(e)}"
     
     async def completion(self, request: ChatCompletionRequest) -> ChatCompletionResponse:
-        """
-        Raw LLM completion without agent routing or DB persistence.
-        
-        Args:
-            request: Completion request with prompt
-            
-        Returns:
-            ChatCompletionResponse with LLM output
-        """
+        """Raw LLM completion without agent routing or DB persistence."""
         logger.info(f"Completion request: {request.prompt[:50]}...")
         return await self.completion_service.complete(request)
-    
-    # Helper methods
     
     async def _get_or_create_conversation(
         self,
@@ -199,9 +190,8 @@ class ChatbotService:
             if conversation:
                 return conversation
         
-        # Create new conversation
         conversation = Conversation(
-            title=query[:50],  # Use first 50 chars of query as title
+            title=query[:50],
             user_id=user_id,
             extra_data={}
         )
@@ -241,7 +231,6 @@ class ChatbotService:
         if provided_history:
             return provided_history
         
-        # Load recent messages from DB (limit to last 20 for memory management)
         messages = await self.message_repo.get_by_conversation_id(
             conversation_id,
             limit=20

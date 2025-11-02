@@ -23,5 +23,4 @@ async def get_async_session():
             await session.close()
 
 
-# Alias for backward compatibility
 get_db_session = get_async_session

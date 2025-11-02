@@ -67,14 +67,11 @@ class EmbeddingFunction:
         Returns:
             Normalized embedding vector
         """
-        # Use text hash as seed for reproducibility
         seed = hash(text) % (2 ** 32)
         random.seed(seed)
         
-        # Generate random vector
         vector = [random.gauss(0, 1) for _ in range(self.dimension)]
         
-        # Normalize to unit length
         norm = math.sqrt(sum(x ** 2 for x in vector))
         return [x / norm for x in vector]
 
